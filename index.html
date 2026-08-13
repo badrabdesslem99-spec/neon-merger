@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>دمج لوحة النيون</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>دمج لوحة النيون على الحائط</h1>
+    <p class="subtitle">ارفع صورة الحائط + صورة لوحة النيون</p>
+
+    <div class="upload-section">
+      <div class="upload-box">
+        <label>صورة الحائط (الخلفية)</label>
+        <input type="file" id="wallImage" accept="image/*">
+        <div id="wallPreview" class="preview"></div>
+      </div>
+
+      <div class="upload-box">
+        <label>صورة لوحة النيون</label>
+        <input type="file" id="neonImage" accept="image/*">
+        <div id="neonPreview" class="preview"></div>
+      </div>
+    </div>
+
+    <button id="mergeBtn" disabled>دمج الصور</button>
+
+    <div id="status" class="status"></div>
+
+    <div id="resultSection" class="result-section" style="display: none;">
+      <h2>النتيجة النهائية</h2>
+      <img id="resultImage" alt="النتيجة">
+      <br>
+      <a id="downloadBtn" download="neon-merged.png">تحميل الصورة</a>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
