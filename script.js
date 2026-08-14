@@ -4,9 +4,6 @@ const wallPreview = document.getElementById('wallPreview');
 const neonPreview = document.getElementById('neonPreview');
 const mergeBtn = document.getElementById('mergeBtn');
 const status = document.getElementById('status');
-const resultSection = document.getElementById('resultSection');
-const resultImage = document.getElementById('resultImage');
-const downloadBtn = document.getElementById('downloadBtn');
 
 let wallBase64 = null;
 let neonBase64 = null;
@@ -15,7 +12,6 @@ let neonMimeType = 'image/jpeg';
 
 function handleFileSelect(file, previewElement, callback) {
   if (!file) return;
-
   const reader = new FileReader();
   reader.onload = function(e) {
     previewElement.innerHTML = `<img src="${e.target.result}" alt="معاينة">`;
@@ -53,12 +49,11 @@ mergeBtn.addEventListener('click', async () => {
   }
 
   mergeBtn.disabled = true;
-  status.textContent = 'جاري تحليل الصور...';
+  status.textContent = 'جاري تحليل الصور بواسطة Gemini 3.5...';
   status.style.color = '#00ccff';
 
   try {
-    // الخطوة 1: تحليل الصور
-    const analyzeRes = await fetch('/api/analyze', {
+    const response = await fetch('/api/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -69,55 +64,39 @@ mergeBtn.addEventListener('click', async () => {
       })
     });
 
-    const analyzeData = await analyzeRes.json();
+    const data = await response.json();
 
-    if (!analyzeRes.ok) {
-      throw new Error(analyzeData.error || 'فشل في تحليل الصور');
+    if (!response.ok) {
+      throw new Error(data.error || 'فشل في التحليل');
     }
 
-    const instructions = analyzeData.instructions;
+    const instructions = data.instructions;
 
-    if (!instructions) {
-      throw new Error('لم يتم الحصول على تعليمات');
-    }
-
-    status.textContent = 'جاري توليد الصورة النهائية... قد يستغرق بضع ثوانٍ';
-
-    // الخطوة 2: توليد الصورة
-    const mergeRes = await fetch('/api/merge', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        wallBase64,
-        neonBase64,
-        wallMimeType,
-        neonMimeType,
-        instructions
-      })
-    });
-
-    const mergeData = await mergeRes.json();
-
-    if (!mergeRes.ok) {
-      throw new Error(mergeData.error || 'فشل في توليد الصورة');
-    }
-
-    if (!mergeData.image) {
-      throw new Error('لم يتم إرجاع صورة من النموذج');
-    }
-
-    // عرض النتيجة
-    resultImage.src = mergeData.image;
-    downloadBtn.href = mergeData.image;
-    resultSection.style.display = 'block';
-
-    status.innerHTML = '<strong style="color:#00ff9d">تم الدمج بنجاح!</strong>';
+    // عرض التعليمات + زر نسخ
+    status.innerHTML = `
+      <div style="background:#1a1a22; padding:15px; border-radius:12px; border:1px solid #00ff9d; margin-top:15px; text-align:right;">
+        <strong style="color:#00ff9d; font-size:16px;">تعليمات الدمج جاهزة:</strong>
+        <pre id="instructionsText" style="white-space:pre-wrap; color:#ddd; margin:12px 0; font-size:13px; text-align:left; direction:ltr; max-height:300px; overflow:auto; background:#111; padding:10px; border-radius:8px;">${instructions}</pre>
+        <button onclick="copyInstructions()" style="background:#00ff9d; color:#000; border:none; padding:10px 20px; border-radius:8px; font-weight:bold; cursor:pointer;">
+          نسخ التعليمات
+        </button>
+        <p style="color:#aaa; font-size:13px; margin-top:12px;">
+          بعد النسخ → افتح Google AI Studio أو تطبيق Gemini → ارفع الصورتين → الصق التعليمات
+        </p>
+      </div>
+    `;
 
   } catch (error) {
-    console.error(error);
     status.textContent = 'حدث خطأ: ' + error.message;
     status.style.color = '#ff6b6b';
   } finally {
     mergeBtn.disabled = false;
   }
 });
+
+function copyInstructions() {
+  const text = document.getElementById('instructionsText').innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    alert('تم نسخ التعليمات بنجاح!');
+  });
+}
