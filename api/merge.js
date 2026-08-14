@@ -26,11 +26,10 @@ export default async function handler(req, res) {
     const wallData = wallBase64.includes(',') ? wallBase64.split(',')[1] : wallBase64;
     const neonData = neonBase64.includes(',') ? neonBase64.split(',')[1] : neonBase64;
 
-    // نموذج الصور
     const model = 'gemini-2.5-flash-image';
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/\( {model}:generateContent?key= \){apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -97,4 +96,4 @@ export default async function handler(req, res) {
     console.error(error);
     return res.status(500).json({ error: error.message || 'Server error' });
   }
-          }
+}
