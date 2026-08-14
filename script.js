@@ -1,4 +1,3 @@
-// عناصر الواجهة
 const wallInput = document.getElementById('wallImage');
 const neonInput = document.getElementById('neonImage');
 const wallPreview = document.getElementById('wallPreview');
@@ -9,13 +8,11 @@ const resultSection = document.getElementById('resultSection');
 const resultImage = document.getElementById('resultImage');
 const downloadBtn = document.getElementById('downloadBtn');
 
-// متغيرات لتخزين كود الصور ونوعها
 let wallBase64 = null;
 let neonBase64 = null;
 let wallMimeType = 'image/jpeg';
 let neonMimeType = 'image/jpeg';
 
-// وظيفة قراءة الصورة وتحويلها إلى Base64
 function handleFileSelect(file, previewElement, callback) {
   if (!file) return;
 
@@ -28,7 +25,6 @@ function handleFileSelect(file, previewElement, callback) {
   reader.readAsDataURL(file);
 }
 
-// التنسيق عند اختيار ملف الحائط
 wallInput.addEventListener('change', (e) => {
   handleFileSelect(e.target.files[0], wallPreview, (data, mime) => {
     wallBase64 = data;
@@ -36,7 +32,6 @@ wallInput.addEventListener('change', (e) => {
   });
 });
 
-// التنسيق عند اختيار ملف النيون
 neonInput.addEventListener('change', (e) => {
   handleFileSelect(e.target.files[0], neonPreview, (data, mime) => {
     neonBase64 = data;
@@ -44,14 +39,12 @@ neonInput.addEventListener('change', (e) => {
   });
 });
 
-// التحقق من رفع الصورتين لتفعيل الزر
 function checkReadyState() {
   if (wallBase64 && neonBase64) {
     mergeBtn.disabled = false;
   }
 }
 
-// دالة الضغط على زر الدمج (تم تحديثها بالكامل حسب تعليمات Grok)
 mergeBtn.addEventListener('click', async () => {
   if (!wallBase64 || !neonBase64) {
     status.textContent = 'يرجى اختيار الصورتين أولاً';
@@ -60,12 +53,12 @@ mergeBtn.addEventListener('click', async () => {
   }
 
   mergeBtn.disabled = true;
-  status.textContent = 'جاري تحليل الصور بواسطة Gemini 3.5...';
+  status.textContent = 'جاري تحليل الصور...';
   status.style.color = '#00ccff';
 
   try {
-    // ========== الخطوة 1: الحصول على تعليمات الدمج ==========
-    const analyzeResponse = await fetch('/api/analyze', {
+    // الخطوة 1: تحليل الصور
+    const analyzeRes = await fetch('/api/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -76,28 +69,22 @@ mergeBtn.addEventListener('click', async () => {
       })
     });
 
-    const analyzeData = await analyzeResponse.json();
+    const analyzeData = await analyzeRes.json();
 
-    if (!analyzeResponse.ok) {
+    if (!analyzeRes.ok) {
       throw new Error(analyzeData.error || 'فشل في تحليل الصور');
     }
 
     const instructions = analyzeData.instructions;
+
     if (!instructions) {
       throw new Error('لم يتم الحصول على تعليمات');
     }
 
-    // عرض التعليمات مؤقتاً
-    status.innerHTML = `
-      <div style="text-align:right; background:#1a1a22; padding:12px; border-radius:10px; border:1px solid #00ff9d; margin-bottom:15px;">
-        <strong style="color:#00ff9d;">تم تحليل الصور بنجاح</strong>
-        <pre style="white-space:pre-wrap; color:#ccc; font-size:12px; margin-top:8px; text-align:left; direction:ltr; max-height:150px; overflow:auto;">${instructions.substring(0, 400)}...</pre>
-      </div>
-      <div style="color:#00ccff;">جاري توليد الصورة النهائية بواسطة Nano Banana...</div>
-    `;
+    status.textContent = 'جاري توليد الصورة النهائية... قد يستغرق بضع ثوانٍ';
 
-    // ========== الخطوة 2: توليد الصورة النهائية ==========
-    const mergeResponse = await fetch('/api/merge', {
+    // الخطوة 2: توليد الصورة
+    const mergeRes = await fetch('/api/merge', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -109,9 +96,9 @@ mergeBtn.addEventListener('click', async () => {
       })
     });
 
-    const mergeData = await mergeResponse.json();
+    const mergeData = await mergeRes.json();
 
-    if (!mergeResponse.ok) {
+    if (!mergeRes.ok) {
       throw new Error(mergeData.error || 'فشل في توليد الصورة');
     }
 
@@ -119,13 +106,12 @@ mergeBtn.addEventListener('click', async () => {
       throw new Error('لم يتم إرجاع صورة من النموذج');
     }
 
-    // عرض النتيجة النهائية
+    // عرض النتيجة
     resultImage.src = mergeData.image;
     downloadBtn.href = mergeData.image;
     resultSection.style.display = 'block';
 
-    status.innerHTML = `<div style="color:#00ff9d; font-weight:bold;">تم الدمج بنجاح!</div>`;
-    status.style.color = '#00ff9d';
+    status.innerHTML = '<strong style="color:#00ff9d">تم الدمج بنجاح!</strong>';
 
   } catch (error) {
     console.error(error);
