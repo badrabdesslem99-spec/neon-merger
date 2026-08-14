@@ -15,21 +15,22 @@ export default async function handler(req, res) {
     const { wallBase64, neonBase64, wallMimeType, neonMimeType, instructions } = req.body;
 
     if (!wallBase64 || !neonBase64 || !instructions) {
-      return res.status(400).json({ error: 'الصورتان والتعليمات مطلوبة' });
+      return res.status(400).json({ error: 'Missing required fields' });
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      return res.status(500).json({ error: 'مفتاح Gemini غير موجود' });
+      return res.status(500).json({ error: 'API key is missing' });
     }
 
     const wallData = wallBase64.includes(',') ? wallBase64.split(',')[1] : wallBase64;
     const neonData = neonBase64.includes(',') ? neonBase64.split(',')[1] : neonBase64;
 
-    // نموذج الصور (Nano Banana 2)
-    const model = 'gemini-3.1-flash-lite-image';
+    // نموذج الصور
+    const model = 'gemini-2.5-flash-image';
+
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/\( {model}:generateContent?key= \){apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -64,11 +65,10 @@ export default async function handler(req, res) {
 
     if (!response.ok) {
       return res.status(response.status).json({
-        error: data.error?.message || 'خطأ من نموذج الصور'
+        error: data.error?.message || 'API Error'
       });
     }
 
-    // البحث عن الصورة في الرد
     let imageBase64 = null;
     const parts = data.candidates?.[0]?.content?.parts || [];
 
@@ -84,8 +84,8 @@ export default async function handler(req, res) {
     }
 
     if (!imageBase64) {
-      return res.status(500).json({ 
-        error: 'لم يتم توليد صورة. الرد: ' + JSON.stringify(data).slice(0, 300) 
+      return res.status(500).json({
+        error: 'No image found: ' + JSON.stringify(data).slice(0, 300)
       });
     }
 
@@ -95,6 +95,6 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: error.message || 'خطأ داخلي' });
+    return res.status(500).json({ error: error.message || 'Server error' });
   }
           }
