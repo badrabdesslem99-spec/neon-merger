@@ -27,8 +27,7 @@ export default async function handler(req, res) {
     const neonData = neonBase64.includes(',') ? neonBase64.split(',')[1] : neonBase64;
 
     // نموذج الصور (Nano Banana 2)
-    const model = 'gemini-2.5-flash-image';
-
+    const model = 'gemini-3.1-flash-lite-image';
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/\( {model}:generateContent?key= \){apiKey}`,
       {
