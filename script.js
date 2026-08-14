@@ -51,7 +51,7 @@ function checkReadyState() {
   }
 }
 
-// حدث الضغط على زر الدمج عبر Vercel API
+// دالة الضغط على زر الدمج (تم تحديثها بالكامل حسب تعليمات Grok)
 mergeBtn.addEventListener('click', async () => {
   if (!wallBase64 || !neonBase64) {
     status.textContent = 'يرجى اختيار الصورتين أولاً';
@@ -59,48 +59,73 @@ mergeBtn.addEventListener('click', async () => {
     return;
   }
 
-  // تعطيل الزر أثناء العمل
   mergeBtn.disabled = true;
-  status.textContent = 'جاري تحليل الصور بواسطة Gemini (عبر Vercel)... يرجى الانتظار';
+  status.textContent = 'جاري تحليل الصور بواسطة Gemini 3.5...';
   status.style.color = '#00ccff';
 
   try {
-    const response = await fetch('/api/analyze', {
+    // ========== الخطوة 1: الحصول على تعليمات الدمج ==========
+    const analyzeResponse = await fetch('/api/analyze', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        wallBase64: wallBase64,
-        neonBase64: neonBase64,
-        wallMimeType: wallMimeType,
-        neonMimeType: neonMimeType
+        wallBase64,
+        neonBase64,
+        wallMimeType,
+        neonMimeType
       })
     });
 
-    const data = await response.json();
+    const analyzeData = await analyzeResponse.json();
 
-    if (!response.ok) {
-      throw new Error(data.error || 'حدث خطأ من السيرفر');
+    if (!analyzeResponse.ok) {
+      throw new Error(analyzeData.error || 'فشل في تحليل الصور');
     }
 
-    const instructions = data.instructions;
-
+    const instructions = analyzeData.instructions;
     if (!instructions) {
-      throw new Error('لم يتم الحصول على تعليمات من النموذج');
+      throw new Error('لم يتم الحصول على تعليمات');
     }
 
-    // عرض التعليمات
+    // عرض التعليمات مؤقتاً
     status.innerHTML = `
-      <div style="text-align: right; background:#1a1a22; padding:15px; border-radius:10px; margin-top:15px; border:1px solid #00ff9d;">
-        <strong style="color:#00ff9d;">تعليمات الدمج التي كتبها gemini-2.5-flash:</strong>
-        <pre style="white-space: pre-wrap; color:#ddd; margin-top:10px; font-size:13px; text-align:left; direction:ltr;">${instructions}</pre>
+      <div style="text-align:right; background:#1a1a22; padding:12px; border-radius:10px; border:1px solid #00ff9d; margin-bottom:15px;">
+        <strong style="color:#00ff9d;">تم تحليل الصور بنجاح</strong>
+        <pre style="white-space:pre-wrap; color:#ccc; font-size:12px; margin-top:8px; text-align:left; direction:ltr; max-height:150px; overflow:auto;">${instructions.substring(0, 400)}...</pre>
       </div>
+      <div style="color:#00ccff;">جاري توليد الصورة النهائية بواسطة Nano Banana...</div>
     `;
-    status.style.color = '#00ff9d';
 
-    // حفظ التعليمات للمرحلة القادمة
-    window.mergeInstructions = instructions;
+    // ========== الخطوة 2: توليد الصورة النهائية ==========
+    const mergeResponse = await fetch('/api/merge', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        wallBase64,
+        neonBase64,
+        wallMimeType,
+        neonMimeType,
+        instructions
+      })
+    });
+
+    const mergeData = await mergeResponse.json();
+
+    if (!mergeResponse.ok) {
+      throw new Error(mergeData.error || 'فشل في توليد الصورة');
+    }
+
+    if (!mergeData.image) {
+      throw new Error('لم يتم إرجاع صورة من النموذج');
+    }
+
+    // عرض النتيجة النهائية
+    resultImage.src = mergeData.image;
+    downloadBtn.href = mergeData.image;
+    resultSection.style.display = 'block';
+
+    status.innerHTML = `<div style="color:#00ff9d; font-weight:bold;">تم الدمج بنجاح!</div>`;
+    status.style.color = '#00ff9d';
 
   } catch (error) {
     console.error(error);
@@ -110,4 +135,3 @@ mergeBtn.addEventListener('click', async () => {
     mergeBtn.disabled = false;
   }
 });
-  
